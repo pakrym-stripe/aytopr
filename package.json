@@ -13,7 +13,9 @@
     "typescript": "^4.6.4"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "yarn tsc -b tsconfig.dist.json",
+    "run": "yarn build && node dist/index.js"
   },
   "dependencies": {
     "@octokit/rest": "^18.12.0",

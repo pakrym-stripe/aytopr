@@ -1,5 +1,6 @@
 export type Config = {
-    name: string,
+    repo: string,
     org: string,
-    branch: string
+    branch: string,
+    token: string
 }

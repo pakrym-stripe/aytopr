@@ -2,30 +2,36 @@ import { Octokit } from "@octokit/rest";
 import { components } from "@octokit/openapi-types";
 import { Config } from "./config";
 
-const client = new Octokit({
-  auth: {},
-});
-
 export type PullRequest = components["schemas"]["pull-request"];
 
 export const getPRsSinceLastRelease = async (
   repo: Config
 ): Promise<PullRequest[]> => {
+  const client = new Octokit({
+    auth: repo.token,
+    log: {
+      debug: () => {},
+      info: console.log,
+      warn: console.warn,
+      error: console.error
+    },
+  });
+  
   const tags = await client.repos.listTags({
     owner: repo.org,
-    repo: repo.name,
+    repo: repo.repo,
     per_page: 1,
   });
 
   if (tags.data.length == 0) {
-    throw new Error(`Didn't find any tags in ${repo.name}`);
+    throw new Error(`Didn't find any tags in ${repo.repo}`);
   }
 
   const tag = tags.data[0];
 
   const { data: commit } = await client.repos.getCommit({
     owner: repo.org,
-    repo: repo.name,
+    repo: repo.repo,
     ref: tag.commit.sha,
   });
 
@@ -38,7 +44,7 @@ export const getPRsSinceLastRelease = async (
 
   const pullsRequest = client.pulls.list.endpoint.merge({
     owner: repo.org,
-    repo: repo.name,
+    repo: repo.repo,
     state: "closed",
     sort: "updated",
     direction: "desc",
@@ -54,6 +60,11 @@ export const getPRsSinceLastRelease = async (
     for (let pr of response.data) {
       if (pr.merged_at && new Date(pr.merged_at) > targetDate) {
         prs.push(pr);
+      }
+
+      if (new Date(pr.updated_at) < targetDate)
+      {
+        return prs;
       }
     }
   }
